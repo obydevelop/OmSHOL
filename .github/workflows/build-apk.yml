@@ -1,0 +1,84 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install dependencies
+      run: npm ci --legacy-peer-deps
+      
+    - name: Build Next.js app
+      run: npm run export
+      
+    - name: Sync Capacitor
+      run: npx cap sync android
+      
+    - name: Build Android APK
+      run: |
+        cd android
+        chmod +x ./gradlew
+        ./gradlew assembleRelease --no-daemon
+        
+    - name: Sign APK
+      uses: r0adkll/sign-android-release@v1
+      id: sign_app
+      with:
+        releaseDirectory: android/app/build/outputs/apk/release
+        signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+        alias: ${{ secrets.ALIAS }}
+        keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+        keyPassword: ${{ secrets.KEY_PASSWORD }}
+      env:
+        BUILD_TOOLS_VERSION: "34.0.0"
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: aplikasi-jadwal-sholat-apk
+        path: android/app/build/outputs/apk/release/*.apk
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ github.run_number }}
+        name: Aplikasi Jadwal Sholat v${{ github.run_number }}
+        body: |
+          🎉 **Aplikasi Jadwal Sholat APK**
+          
+          📱 **Fitur:**
+          - Waktu sholat real-time untuk 4 kota Indonesia
+          - Interface modern dengan background Ka'bah
+          - Dark theme yang elegan
+          - Responsive design untuk mobile
+          
+          📥 **Download APK di bawah ini:**
+        files: android/app/build/outputs/apk/release/*.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
