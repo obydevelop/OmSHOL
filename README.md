@@ -109,8 +109,8 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📞 Kontak
 
-- Email: your.email@example.com
-- GitHub: [@yourusername](https://github.com/yourusername)
+- Email: tid.official@gmail.com
+- GitHub: [@obydevelop](https://github.com/yourusername)
 
 ---
 
